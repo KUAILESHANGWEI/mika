@@ -94,7 +94,8 @@ def archive_release(release):
             "--target", run("git", "rev-parse", tag), "--draft", "--prerelease",
             "--title", "Upstream archive " + tag,
             "--notes", "Original upstream assets, preserved independently. Install the localized APK from the latest stable release for this repository's update service.")
-        existing = api(f"repos/{DESTINATION}/releases/tags/{archive_tag}")
+        existing = next(item for item in api(f"repos/{DESTINATION}/releases?per_page=100")
+                        if item["tag_name"] == archive_tag)
     saved = {asset["name"]: asset for asset in existing["assets"]}
     with tempfile.TemporaryDirectory() as directory:
         folder = Path(directory)
