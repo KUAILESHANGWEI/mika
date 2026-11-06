@@ -49,7 +49,16 @@ def releases():
     return [release for page in pages for release in page]
 
 
+def readme_fingerprint(text):
+    generated = r"<!-- generated:([\w-]+):start -->.*?<!-- generated:\1:end -->"
+    stable = re.sub(generated, "", text.replace("\r\n", "\n"), flags=re.S)
+    return hashlib.sha256(stable.encode()).hexdigest()[:12]
+
+
 def localize():
+    original_readme = Path("README.md").read_text()
+    original_links = original_readme.replace(DESTINATION, UPSTREAM)
+    valid_markers = {readme_fingerprint(original_readme), readme_fingerprint(original_links)}
     # Work from Git's tracked paths, so binaries and private local files stay intact.
     paths = run("git", "ls-files", "-z").split("\0")
     for name in paths:
@@ -73,6 +82,17 @@ def localize():
         )
         if updated != text:
             path.write_text(updated)
+    # Only links changed in the translations. Preserve the upstream freshness check:
+    # do not bless an already stale translation when synchronizing new content.
+    fingerprint = readme_fingerprint(Path("README.md").read_text())
+    marker_pattern = r"<!-- translated-from: README\.md @ ([0-9a-f]+) -->"
+    for translation in Path("docs/readme").glob("README.*.md"):
+        text = translation.read_text()
+        marker = re.search(marker_pattern, text)
+        if marker is None or marker.group(1) not in valid_markers:
+            raise RuntimeError("Upstream README translation is stale: " + str(translation))
+        translation.write_text(re.sub(marker_pattern,
+                              "<!-- translated-from: README.md @ " + fingerprint + " -->", text))
     gradle = Path("app/build.gradle.kts")
     text = gradle.read_text()
     if SIGNING_MARKER not in text:
