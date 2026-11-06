@@ -58,10 +58,20 @@ jobs:
       - name: Localize and test the released source, then build signed APKs
         working-directory: release
         env:
+          TAG: ${{ needs.sync.outputs.tag }}
           MIKA_KEYSTORE_PATH: ${{ runner.temp }}/mika.p12
           MIKA_KEYSTORE_PASSWORD: ${{ secrets.MIKA_KEYSTORE_PASSWORD }}
         run: |
-          python3 ../mirror/.github/scripts/mika_mirror.py localize
+          if git rev-parse --verify "refs/tags/$TAG+mirror" >/dev/null 2>&1; then
+            git checkout --detach "$TAG+mirror"
+          else
+            python3 ../mirror/.github/scripts/mika_mirror.py localize
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add -A
+            git diff --cached --check
+            git commit -m "Localize $TAG for independent distribution"
+          fi
           ./gradlew :core:test :app:testReleaseUnitTest :app:assembleRelease --stacktrace
       - name: Verify and publish independent APKs
         working-directory: release
@@ -69,9 +79,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.sync.outputs.tag }}
         run: |
+          PUBLISH_TAG="$TAG+mirror"
+          if ! git rev-parse --verify "refs/tags/$PUBLISH_TAG" >/dev/null 2>&1; then
+            git tag "$PUBLISH_TAG"
+            git push origin "refs/tags/$PUBLISH_TAG"
+          fi
           mkdir -p dist
-          cp app/build/outputs/apk/release/app-universal-release.apk "dist/Mika-$TAG.apk"
-          cp app/build/outputs/apk/release/app-arm64-v8a-release.apk "dist/Mika-$TAG-arm64.apk"
+          cp app/build/outputs/apk/release/app-universal-release.apk "dist/Mika-$PUBLISH_TAG.apk"
+          cp app/build/outputs/apk/release/app-arm64-v8a-release.apk "dist/Mika-$PUBLISH_TAG-arm64.apk"
           for apk in dist/*.apk; do
             "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$apk"
           done
@@ -81,10 +96,10 @@ jobs:
           Uses a persistent independent signing certificate. It cannot upgrade an APK signed by the upstream author. Back up data before migrating from upstream.
           Original upstream assets are separately preserved in the upstream-* archive releases.
           EOF
-          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
-            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --draft --title "Mika $TAG — independent build" --notes-file dist/NOTES.md
-          gh release upload "$TAG" dist/*.apk dist/SHA256SUMS --repo "$GITHUB_REPOSITORY" --clobber
-          gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease=false --latest --notes-file dist/NOTES.md
+          gh release view "$PUBLISH_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+            gh release create "$PUBLISH_TAG" --repo "$GITHUB_REPOSITORY" --draft --title "Mika $PUBLISH_TAG — independent build" --notes-file dist/NOTES.md
+          gh release upload "$PUBLISH_TAG" dist/*.apk dist/SHA256SUMS --repo "$GITHUB_REPOSITORY" --clobber
+          gh release edit "$PUBLISH_TAG" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease=false --latest --notes-file dist/NOTES.md
       - name: Remove signing material
         if: always()
         run: rm -f "$RUNNER_TEMP/mika.p12"

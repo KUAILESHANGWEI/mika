@@ -116,10 +116,15 @@ def archive_release(release):
                 raise RuntimeError("Digest mismatch: " + name)
             # Preserve earlier bytes if upstream replaces an asset in place.
             if old:
-                versioned = path.with_name("revision-" + digest_file(path)[7:19] + "-" + name)
-                path.rename(versioned)
+                previous = folder / ("previous-" + name)
+                with previous.open("wb") as output:
+                    subprocess.run(["gh", "api", f'repos/{DESTINATION}/releases/assets/{old["id"]}',
+                                    "-H", "Accept: application/octet-stream"], stdout=output, check=True)
+                if previous.stat().st_size != old["size"] or (old.get("digest") and digest_file(previous) != old["digest"]):
+                    raise RuntimeError("Cannot preserve previous asset: " + name)
+                versioned = folder / ("revision-" + digest_file(previous)[7:19] + "-" + name)
+                previous.rename(versioned)
                 run("gh", "release", "upload", archive_tag, str(versioned), "--repo", DESTINATION, "--clobber")
-                versioned.rename(path)
             run("gh", "release", "upload", archive_tag, str(path), "--repo", DESTINATION, "--clobber")
         metadata = folder / "upstream-release.json"
         metadata.write_text(json.dumps(release, ensure_ascii=False, indent=2) + "\n")
@@ -154,7 +159,7 @@ def sync():
             run("git", "commit", "-m", "Sync upstream and retain independent download/update URLs")
         run("git", "push", "origin", "HEAD:main")
         refs = run("git", "for-each-ref", "--format=%(refname)", "refs/remotes/upstream").splitlines()
-        mappings = [ref + ":refs/heads/upstream/" + ref.removeprefix("refs/remotes/upstream/")
+        mappings = ["+" + ref + ":refs/heads/upstream/" + ref.removeprefix("refs/remotes/upstream/")
                     for ref in refs if not ref.endswith("/HEAD")]
         run("git", "push", "origin", *mappings, "--tags")
     else:
@@ -170,7 +175,7 @@ def sync():
     else:
         tag = archive_release(release)
     stable = api(f"repos/{DESTINATION}/releases?per_page=100")
-    complete = next((r for r in stable if r["tag_name"] == tag and not r["draft"] and not r["prerelease"]
+    complete = next((r for r in stable if r["tag_name"] == tag + "+mirror" and not r["draft"] and not r["prerelease"]
                      and any(a["name"] == "SHA256SUMS" for a in r["assets"])), None)
     needs_build = bool(tag and not complete)
     with open(os.environ.get("GITHUB_OUTPUT", os.devnull), "a") as output:
