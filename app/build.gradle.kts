@@ -121,3 +121,20 @@ dependencies {
 tasks.withType<Test>().configureEach {
     inputs.file(rootProject.file("licenses/THIRD_PARTY_NOTICES.md")).withPropertyName("thirdPartyNotices")
 }
+
+// Independent mirror signing. The persistent key is supplied by Actions secrets.
+android {
+    val mirrorStore = System.getenv("MIKA_KEYSTORE_PATH")
+    if (!mirrorStore.isNullOrBlank()) {
+        signingConfigs {
+            create("mirror") {
+                storeFile = file(mirrorStore)
+                storeType = "PKCS12"
+                storePassword = System.getenv("MIKA_KEYSTORE_PASSWORD")
+                keyAlias = "mika"
+                keyPassword = System.getenv("MIKA_KEYSTORE_PASSWORD")
+            }
+        }
+        buildTypes.getByName("release").signingConfig = signingConfigs.getByName("mirror")
+    }
+}

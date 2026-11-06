@@ -7,11 +7,11 @@
 ## 1. 解析最新版本 tag
 
 ```sh
-curl -s https://api.github.com/repos/wangzan101/Mika/releases/latest   # 取 tag_name
+curl -s https://api.github.com/repos/KUAILESHANGWEI/mika/releases/latest   # 取 tag_name
 ```
 
 ```powershell
-(Invoke-RestMethod https://api.github.com/repos/wangzan101/Mika/releases/latest).tag_name
+(Invoke-RestMethod https://api.github.com/repos/KUAILESHANGWEI/mika/releases/latest).tag_name
 ```
 
 下文 `<tag>` 即该值（如 `v0.1.31`），`<ver>` 是去掉 `v` 的版本号（如 `0.1.31`）。
@@ -19,7 +19,7 @@ curl -s https://api.github.com/repos/wangzan101/Mika/releases/latest   # 取 tag
 ## 2. 选 CLI 还是 Skill
 
 - Agent 支持 Skill：**默认装 Skill**，它自带 CLI 脚本。
-- 否则装 CLI：`pipx install 'git+https://github.com/wangzan101/Mika.git@<tag>#subdirectory=tools/mika'`。
+- 否则装 CLI：`pipx install 'git+https://github.com/KUAILESHANGWEI/mika.git@<tag>#subdirectory=tools/mika'`。
 
 ## 3. 安装 Skill
 
@@ -28,7 +28,7 @@ curl -s https://api.github.com/repos/wangzan101/Mika/releases/latest   # 取 tag
 POSIX：
 
 ```sh
-curl -L -o mika.zip https://github.com/wangzan101/Mika/archive/refs/tags/<tag>.zip
+curl -L -o mika.zip https://github.com/KUAILESHANGWEI/mika/archive/refs/tags/<tag>.zip
 unzip -q mika.zip -d mika-src
 mkdir -p <技能目录> && cp -R mika-src/Mika-<ver>/tools/mika <技能目录>/mika
 python3 <技能目录>/mika/scripts/mika_cli.py --version
@@ -37,7 +37,7 @@ python3 <技能目录>/mika/scripts/mika_cli.py --version
 Windows PowerShell：
 
 ```powershell
-Invoke-WebRequest https://github.com/wangzan101/Mika/archive/refs/tags/<tag>.zip -OutFile mika.zip
+Invoke-WebRequest https://github.com/KUAILESHANGWEI/mika/archive/refs/tags/<tag>.zip -OutFile mika.zip
 Expand-Archive mika.zip -DestinationPath mika-src
 New-Item -ItemType Directory -Force "<技能目录>" | Out-Null
 Copy-Item -Recurse mika-src\Mika-<ver>\tools\mika "<技能目录>\mika"

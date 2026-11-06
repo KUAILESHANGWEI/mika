@@ -1,0 +1,90 @@
+name: Independent mirror
+on:
+  schedule:
+    - cron: '23 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: independent-mirror
+  cancel-in-progress: false
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      tag: ${{ steps.sync.outputs.tag }}
+      build: ${{ steps.sync.outputs.build }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+      - name: Sync source and archive every latest release asset
+        id: sync
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/mika_mirror.py sync
+  build:
+    needs: sync
+    if: needs.sync.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: mirror
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.sync.outputs.tag }}
+          path: release
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;35.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Restore persistent independent signing key
+        env:
+          KEYSTORE: ${{ secrets.MIKA_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$KEYSTORE"
+          printf '%s' "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/mika.p12"
+          chmod 600 "$RUNNER_TEMP/mika.p12"
+      - name: Localize and test the released source, then build signed APKs
+        working-directory: release
+        env:
+          MIKA_KEYSTORE_PATH: ${{ runner.temp }}/mika.p12
+          MIKA_KEYSTORE_PASSWORD: ${{ secrets.MIKA_KEYSTORE_PASSWORD }}
+        run: |
+          python3 ../mirror/.github/scripts/mika_mirror.py localize
+          ./gradlew :core:test :app:testReleaseUnitTest :app:assembleRelease --stacktrace
+      - name: Verify and publish independent APKs
+        working-directory: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.sync.outputs.tag }}
+        run: |
+          mkdir -p dist
+          cp app/build/outputs/apk/release/app-universal-release.apk "dist/Mika-$TAG.apk"
+          cp app/build/outputs/apk/release/app-arm64-v8a-release.apk "dist/Mika-$TAG-arm64.apk"
+          for apk in dist/*.apk; do
+            "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$apk"
+          done
+          (cd dist && sha256sum *.apk > SHA256SUMS)
+          cat > dist/NOTES.md <<'EOF'
+          Independent Mika build. Downloads, documentation and in-app updates use KUAILESHANGWEI/mika.
+          Uses a persistent independent signing certificate. It cannot upgrade an APK signed by the upstream author. Back up data before migrating from upstream.
+          Original upstream assets are separately preserved in the upstream-* archive releases.
+          EOF
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --draft --title "Mika $TAG — independent build" --notes-file dist/NOTES.md
+          gh release upload "$TAG" dist/*.apk dist/SHA256SUMS --repo "$GITHUB_REPOSITORY" --clobber
+          gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease=false --latest --notes-file dist/NOTES.md
+      - name: Remove signing material
+        if: always()
+        run: rm -f "$RUNNER_TEMP/mika.p12"
