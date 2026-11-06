@@ -6,7 +6,7 @@ AI tools on your computer (or you, in a terminal) can hand a job to Mika on your
 
 AI agents: go straight to the [agent quick path](agent-quickstart.en.md).
 
-On the phone: install the APK ([Releases](https://github.com/wangzan101/Mika/releases/latest)), open Mika once and add a model. If Mika only needs to chat, browse the web and work with files, Android 11 is enough; to let it operate phone apps, also finish the phone-control setup in the [setup guide](setup-guide.en.md) (Android 12+).
+On the phone: install the APK ([Releases](https://github.com/KUAILESHANGWEI/mika/releases/latest)), open Mika once and add a model. If Mika only needs to chat, browse the web and work with files, Android 11 is enough; to let it operate phone apps, also finish the phone-control setup in the [setup guide](setup-guide.en.md) (Android 12+).
 
 ## Step 1: pick an entry point (CLI + Skill or MCP)
 
