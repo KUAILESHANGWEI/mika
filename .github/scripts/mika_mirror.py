@@ -8,6 +8,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 
 UPSTREAM = "wangzan101/Mika"
 DESTINATION = "KUAILESHANGWEI/mika"
@@ -40,6 +41,12 @@ def run(*args, **kwargs):
 
 def api(path):
     return json.loads(run("gh", "api", path))
+
+
+def releases():
+    pages = json.loads(run("gh", "api", "--paginate", "--slurp",
+                           f"repos/{DESTINATION}/releases?per_page=100"))
+    return [release for page in pages for release in page]
 
 
 def localize():
@@ -87,14 +94,14 @@ def digest_file(path):
 def archive_release(release):
     tag = release["tag_name"]
     archive_tag = "upstream-" + tag
-    releases = api(f"repos/{DESTINATION}/releases?per_page=100")
-    existing = next((item for item in releases if item["tag_name"] == archive_tag), None)
+    saved_releases = releases()
+    existing = next((item for item in saved_releases if item["tag_name"] == archive_tag), None)
     if existing is None:
         run("gh", "release", "create", archive_tag, "--repo", DESTINATION,
             "--target", run("git", "rev-parse", tag), "--draft", "--prerelease",
             "--title", "Upstream archive " + tag,
             "--notes", "Original upstream assets, preserved independently. Install the localized APK from the latest stable release for this repository's update service.")
-        existing = next(item for item in api(f"repos/{DESTINATION}/releases?per_page=100")
+        existing = next(item for item in releases()
                         if item["tag_name"] == archive_tag)
     saved = {asset["name"]: asset for asset in existing["assets"]}
     with tempfile.TemporaryDirectory() as directory:
@@ -157,6 +164,9 @@ def sync():
         run("git", "diff", "--cached", "--check")
         if Path(".git/MERGE_HEAD").exists() or run("git", "status", "--porcelain"):
             run("git", "commit", "-m", "Sync upstream and retain independent download/update URLs")
+        # GitHub disables scheduled workflows after 60 days without repository activity.
+        if time.time() - int(run("git", "log", "-1", "--format=%ct")) > 30 * 86400:
+            run("git", "commit", "--allow-empty", "-m", "Keep the scheduled independent mirror active")
         run("git", "push", "origin", "HEAD:main")
         refs = run("git", "for-each-ref", "--format=%(refname)", "refs/remotes/upstream").splitlines()
         mappings = ["+" + ref + ":refs/heads/upstream/" + ref.removeprefix("refs/remotes/upstream/")
@@ -169,12 +179,12 @@ def sync():
         release = api(f"repos/{UPSTREAM}/releases/latest")
     except subprocess.CalledProcessError:
         print("::warning::Upstream release API unavailable. Using the saved archive if needed.")
-        saved = api(f"repos/{DESTINATION}/releases?per_page=100")
+        saved = releases()
         archived = next((r for r in saved if r["tag_name"].startswith("upstream-v") and not r["draft"]), None)
         tag = archived["tag_name"].removeprefix("upstream-") if archived else ""
     else:
         tag = archive_release(release)
-    stable = api(f"repos/{DESTINATION}/releases?per_page=100")
+    stable = releases()
     complete = next((r for r in stable if r["tag_name"] == tag + "+mirror" and not r["draft"] and not r["prerelease"]
                      and any(a["name"] == "SHA256SUMS" for a in r["assets"])), None)
     needs_build = bool(tag and not complete)
