@@ -1,4 +1,4 @@
-<!-- translated-from: README.md @ 1462aae0ec82 -->
+<!-- translated-from: README.md @ 230042a685d1 -->
 <div align="center">
 
 <img src="../media/logo.png" alt="Mika" width="88" />
@@ -172,8 +172,8 @@
 
 <a href="https://star-history.com/#KUAILESHANGWEI/mika&Date">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=KUAILESHANGWEI/mika&type=Date&theme=dark&v=20261104-2107" />
-    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=KUAILESHANGWEI/mika&type=Date&v=20261104-2107" width="600" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=KUAILESHANGWEI/mika&type=Date&theme=dark&v=20261107-2304" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=KUAILESHANGWEI/mika&type=Date&v=20261107-2304" width="600" />
   </picture>
 </a>
 
