@@ -42,6 +42,10 @@
     <string name="chat_continue">계속</string>
     <string name="chat_not_done">끝내지 못했어요</string>
     <string name="chat_stopped">중지됨.</string>
+    <string name="chat_resume_checkpoint">중단한 곳에서 계속</string>
+    <string name="chat_restart_task">처음부터 다시 시작</string>
+    <string name="chat_resume_request">중단한 곳에서 계속: %1$s</string>
+    <string name="chat_restart_request">처음부터 다시 시작: %1$s</string>
     <string name="chat_view_source">출처 보기</string>
     <string name="chat_open">열기</string>
     <string name="chat_attach_rejected">추가하지 못했어요: %1$s (파일당 200MB 미만이어야 해요)</string>
@@ -61,7 +65,7 @@
     <string name="drawer_delete_body">“%1$s”과(와) 그 안의 파일이 삭제돼요.</string>
     <string name="drawer_delete_running">실행 중인 작업도 중지돼요.</string>
     <plurals name="drawer_delete_schedules">
-        <item quantity="other">이 채팅의 예약 작업 %1$d개도 함께 삭제돼요.</item>
+        <item quantity="other">이 채팅의 예약 작업 %1$d개는 유지돼요.</item>
     </plurals>
     <string name="drawer_actions">채팅 옵션</string>
     <string name="drawer_rename">이름 바꾸기</string>

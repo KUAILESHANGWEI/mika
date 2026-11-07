@@ -1,4 +1,4 @@
-<!-- translated-from: README.md @ 4266f136c4b4 -->
+<!-- translated-from: README.md @ 1462aae0ec82 -->
 <div align="center">
 
 <img src="../media/logo.png" alt="Mika" width="88" />
@@ -15,6 +15,14 @@
 <a href="https://github.com/KUAILESHANGWEI/mika/releases"><img src="https://img.shields.io/github/downloads/KUAILESHANGWEI/mika/total?label=%E4%B8%8B%E8%BD%BD&color=2ea043" alt="downloads" /></a>
 <a href="https://github.com/KUAILESHANGWEI/mika/releases/latest"><img src="https://img.shields.io/github/v/release/KUAILESHANGWEI/mika?include_prereleases&label=%E7%89%88%E6%9C%AC" alt="version" /></a>
 <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-lightgrey" alt="license" /></a>
+
+<br/>
+
+<a href="https://trendshift.io/repositories/326940#achievements"><img src="https://trendshift.io/api/badge/trendshift/repositories/326940/daily?language=Kotlin" alt="#1 Kotlin Repository of the Day" width="250" height="55" /></a>
+<a href="https://trendshift.io/repositories/326940#achievements"><img src="https://trendshift.io/api/badge/trendshift/repositories/326940/weekly?language=Kotlin" alt="#1 Kotlin Repository of the Week" width="250" height="55" /></a>
+<a href="https://trendshift.io/repositories/326940#achievements"><img src="https://trendshift.io/api/badge/trendshift/repositories/326940/daily" alt="#5 Repository of the Day" width="250" height="55" /></a>
+
+<br/>
 
 [English](../../README.md) · 简体中文 · [繁體中文](README.zh-Hant.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md)
 
